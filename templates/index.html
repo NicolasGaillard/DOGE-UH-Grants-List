@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOGE Grants - Hawaii</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ccc;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        td {
+            text-transform: none;
+        }
+        p.attribution {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DOGE list of UH Grants</h1>
+
+    <!-- Scrape and update metadata -->
+    <p>
+        <strong>Most recent data pulling:</strong> {{ last_scraped }}<br>
+        <strong>Last update on DOGE.gov:</strong> {{ second_row_date }}<br>
+        <strong>Last entry for UH grants:</strong> {{ last_hawaii_univ_date }}
+    </p>
+
+    <!-- Attribution Text -->
+    <p class="attribution">
+        Data scrapped from doge.gov and filtered using "Hawaii" and "University" as keywords.<br><br>
+        Adapted from <a href="https://github.com/m-nolan/doge-scrape" target="_blank">
+        Stuka & Nolan's DOGE data scraper</a> by N. Gaillard.<br><br>
+    </p>
+
+    {% if grants %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Agency</th>
+                    <th>Recipient</th>
+                    <th>Value</th>
+                    <th>Savings</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for grant in grants %}
+                <tr>
+                    <td>{{ grant['date'] }}</td>
+                    <td>{{ grant['agency'] }}</td>
+                    <td>{{ grant['recipient'] }}</td>
+                    <td>{{ grant['value'] }}</td>
+                    <td>{{ grant['savings'] }}</td>
+                    <td>{{ grant['description_doge'] | safe }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No matching grants found.</p>
+    {% endif %}
+</body>
+</html>
