@@ -10,7 +10,7 @@ def generate_static_html():
     try:
         df_all = pd.read_csv(csv_path)
     except Exception as e:
-        print(f"Error loading CSV file: {e}")
+        print(f"<h2>Error loading CSV file: {e}</h2>")
         return
 
     df_all['date'] = pd.to_datetime(df_all['date'], errors='coerce').dt.date
@@ -22,11 +22,16 @@ def generate_static_html():
     ]['date'].max()
     last_hawaii_univ_date = last_hawaii_univ_date if pd.notna(last_hawaii_univ_date) else "N/A"
 
+    # Filtered DataFrame
     df = df_all[
         df_all['recipient'].str.contains('Hawaii', case=False, na=False) &
         df_all['recipient'].str.contains('University', case=False, na=False) &
         ~df_all['recipient'].str.contains('Pacific', case=False, na=False)
-    ].copy()
+    ].copy()  # .copy() prevents pandas warnings
+
+    # Counts for display
+    total_entries = len(df_all)
+    filtered_entries = len(df)
 
     def clean_description(text, link, word_limit=50):
         if not isinstance(text, str):
@@ -55,20 +60,20 @@ def generate_static_html():
     df.loc[:, 'date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
     last_scraped = datetime.now().strftime('%Y-%m-%d')
 
-    print("About to enter Flask app context.")
     with app.app_context():
-        print("Inside Flask app context:", current_app.name)
         html = render_template(
             'index.html',
             grants=df.to_dict(orient='records'),
             last_scraped=last_scraped,
             second_row_date=second_row_date,
-            last_hawaii_univ_date=last_hawaii_univ_date
+            last_hawaii_univ_date=last_hawaii_univ_date,
+            total_entries=total_entries,
+            filtered_entries=filtered_entries
         )
-        os.makedirs('docs', exist_ok=True)
-        with open('docs/index.html', 'w', encoding='utf-8') as f:
-            f.write(html)
-        print("HTML generated and written to docs/index.html")
+
+    os.makedirs('docs', exist_ok=True)
+    with open('docs/index.html', 'w', encoding='utf-8') as f:
+        f.write(html)
 
 if __name__ == '__main__':
     generate_static_html()
