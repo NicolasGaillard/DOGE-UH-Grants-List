@@ -1,0 +1,24 @@
+name: Run doge-scrape.py and then app.py
+
+on:
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run doge-scrape.py
+        run: python doge-scrape.py
+
+  app:
+    needs: scrape  # Wait for 'scrape' to finish successfully
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run app.py
+        run: python app.py
