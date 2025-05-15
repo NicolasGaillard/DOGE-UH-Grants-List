@@ -29,6 +29,19 @@
             color: #555;
             margin-top: 30px;
         }
+        button.export-btn {
+            background-color: #3380cc;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 1em;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+        button.export-btn:hover {
+            background-color: #225c8f;
+        }
     </style>
 </head>
 <body>
@@ -42,6 +55,9 @@
         <strong>Total grants in DOGE:</strong> {{ total_entries }}<br>
         <strong>Total UH grants:</strong> {{ filtered_entries }}
     </p>
+
+    <!-- Export CSV Button -->
+    <button class="export-btn" onclick="exportTableToCSV('filtered-uh-grants.csv')">Export UH Grants as CSV</button>
 
     <!-- Attribution Text -->
     <p class="attribution">
@@ -78,5 +94,27 @@
     {% else %}
         <p>No matching grants found.</p>
     {% endif %}
+
+    <!-- CSV Export Script -->
+    <script>
+    function exportTableToCSV(filename) {
+        var csv = [];
+        var rows = document.querySelectorAll("table tr");
+        for (var i = 0; i < rows.length; i++) {
+            var row = [], cols = rows[i].querySelectorAll("td, th");
+            for (var j = 0; j < cols.length; j++)
+                row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
+            csv.push(row.join(","));
+        }
+        var csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+        var downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+    </script>
 </body>
 </html>
