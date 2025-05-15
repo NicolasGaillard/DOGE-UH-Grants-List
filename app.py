@@ -5,35 +5,28 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
+def generate_static_html():
     csv_path = os.path.join('data', 'doge-grant-stub.csv')
     try:
         df_all = pd.read_csv(csv_path)
     except Exception as e:
         return f"<h2>Error loading CSV file: {e}</h2>"
 
-    # Parse date column
     df_all['date'] = pd.to_datetime(df_all['date'], errors='coerce').dt.date
-
-    # Get second row date from full CSV
     second_row_date = df_all['date'].iloc[1] if len(df_all) > 1 else "N/A"
 
-    # Most recent date where recipient contains BOTH "Hawaii" and "University"
     last_hawaii_univ_date = df_all[
         df_all['recipient'].str.contains('Hawaii', case=False, na=False) &
         df_all['recipient'].str.contains('University', case=False, na=False)
     ]['date'].max()
     last_hawaii_univ_date = last_hawaii_univ_date if pd.notna(last_hawaii_univ_date) else "N/A"
 
-    # Final filter: must have "Hawaii" and "University", but NOT "Pacific"
     df = df_all[
         df_all['recipient'].str.contains('Hawaii', case=False, na=False) &
         df_all['recipient'].str.contains('University', case=False, na=False) &
         ~df_all['recipient'].str.contains('Pacific', case=False, na=False)
     ]
 
-    # Clean and truncate description, append [LINK]
     def clean_description(text, link, word_limit=50):
         if not isinstance(text, str):
             return ""
@@ -50,7 +43,6 @@ def index():
         lambda row: clean_description(row['description_doge'], row.get('link')), axis=1
     )
 
-    # Format value and savings
     def format_dollar(x):
         try:
             return f"${int(round(float(x))):,}"
@@ -59,14 +51,10 @@ def index():
 
     df['value'] = df['value'].apply(format_dollar)
     df['savings'] = df['savings'].apply(format_dollar)
-
-    # Ensure filtered date column is still valid
     df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
-
-    # Current run date
     last_scraped = datetime.now().strftime('%Y-%m-%d')
 
-    return render_template(
+    html = render_template(
         'index.html',
         grants=df.to_dict(orient='records'),
         last_scraped=last_scraped,
@@ -74,5 +62,9 @@ def index():
         last_hawaii_univ_date=last_hawaii_univ_date
     )
 
+    os.makedirs('docs', exist_ok=True)
+    with open('docs/index.html', 'w', encoding='utf-8') as f:
+        f.write(html)
+
 if __name__ == '__main__':
-    app.run(debug=True, port=8080)
+    generate_static_html()
