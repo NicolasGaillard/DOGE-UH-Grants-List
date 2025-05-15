@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 def generate_static_html():
     csv_path = os.path.join('data', 'doge-grant-stub.csv')
@@ -39,7 +39,8 @@ def generate_static_html():
             truncated += f' <a href="{link}" target="_blank">[LINK]</a>'
         return truncated
 
-    df['description_doge'] = df.apply(
+    # Fix pandas SettingWithCopyWarning by using .loc[:, col]
+    df.loc[:, 'description_doge'] = df.apply(
         lambda row: clean_description(row['description_doge'], row.get('link')), axis=1
     )
 
@@ -49,18 +50,20 @@ def generate_static_html():
         except:
             return x
 
-    df['value'] = df['value'].apply(format_dollar)
-    df['savings'] = df['savings'].apply(format_dollar)
-    df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
+    df.loc[:, 'value'] = df['value'].apply(format_dollar)
+    df.loc[:, 'savings'] = df['savings'].apply(format_dollar)
+    df.loc[:, 'date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
     last_scraped = datetime.now().strftime('%Y-%m-%d')
 
-    html = render_template(
-        'index.html',
-        grants=df.to_dict(orient='records'),
-        last_scraped=last_scraped,
-        second_row_date=second_row_date,
-        last_hawaii_univ_date=last_hawaii_univ_date
-    )
+    # Use Flask application context for render_template
+    with app.app_context():
+        html = render_template(
+            'index.html',
+            grants=df.to_dict(orient='records'),
+            last_scraped=last_scraped,
+            second_row_date=second_row_date,
+            last_hawaii_univ_date=last_hawaii_univ_date
+        )
 
     os.makedirs('docs', exist_ok=True)
     with open('docs/index.html', 'w', encoding='utf-8') as f:
