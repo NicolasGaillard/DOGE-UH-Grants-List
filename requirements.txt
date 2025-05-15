@@ -6,3 +6,12 @@ requests
 selenium
 tqdm>=4.65
 validators>=0.34
+flask
+pandas
+numpy
+requests
+validators
+beautifulsoup4
+ratelimit
+selenium
+tqdm
