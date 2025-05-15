@@ -25,7 +25,7 @@ def generate_static_html():
         df_all['recipient'].str.contains('Hawaii', case=False, na=False) &
         df_all['recipient'].str.contains('University', case=False, na=False) &
         ~df_all['recipient'].str.contains('Pacific', case=False, na=False)
-    ]
+    ].copy()   # <--- THIS .copy() IS IMPORTANT TO SILENCE THE WARNING!
 
     def clean_description(text, link, word_limit=50):
         if not isinstance(text, str):
@@ -39,7 +39,7 @@ def generate_static_html():
             truncated += f' <a href="{link}" target="_blank">[LINK]</a>'
         return truncated
 
-    # Fix pandas SettingWithCopyWarning by using .loc[:, col]
+    # Use .loc[:, 'col'] and work on a copy of the DataFrame
     df.loc[:, 'description_doge'] = df.apply(
         lambda row: clean_description(row['description_doge'], row.get('link')), axis=1
     )
