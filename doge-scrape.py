@@ -13,14 +13,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from tqdm import tqdm
 
-# Set up absolute path to data directory
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(SCRIPT_DIR, 'data')
-os.makedirs(DATA_DIR, exist_ok=True)
-
 N_REQ = 10
-LIMIT_S = 3    # 1000 reqs per 300s, or 10 reqs per 3s.
-
+LIMIT_S = 3    # 1000 reqs per 300s, or 10 reqs per 3s. Pretty lenient!
 data_key_dict = { # match on the 'id' field
     'award_agency': 'agencyID',
     'award_procurement_id': 'PIID',
@@ -67,8 +61,7 @@ data_key_dict = { # match on the 'id' field
     'performance_zip_ext': 'placeOfPerformanceZIPCode4',
 }
 
-def safe_load_csv(filename):
-    filepath = os.path.join(DATA_DIR, filename)
+def safe_load_csv(filepath):
     df = pd.read_csv(filepath) if os.path.exists(filepath) else pd.DataFrame([])
     if 'uploaded_dt' in df.keys():
         df['uploaded_dt'] = pd.to_datetime(df['uploaded_dt'])
@@ -79,11 +72,11 @@ def clean_pre_df(df):
     return df
 
 def load_pre_data():
-    pre_contract_df = safe_load_csv('doge-contract.csv')
+    pre_contract_df = safe_load_csv('./data/doge-contract.csv')
     pre_contract_df = clean_pre_df(pre_contract_df)
-    pre_grant_df = safe_load_csv('doge-grant.csv')
+    pre_grant_df = safe_load_csv('./data/doge-grant.csv')
     pre_grant_df = clean_pre_df(pre_grant_df)
-    pre_property_df = safe_load_csv('doge-property.csv')
+    pre_property_df = safe_load_csv('./data/doge-property.csv')
     pre_property_df = clean_pre_df(pre_property_df)
     return pre_contract_df, pre_grant_df, pre_property_df
 
@@ -150,7 +143,7 @@ def df_row_diff(old_df,new_df):
 def df_row_diff_2(old_df,stub_df):
     new_df = stub_df.copy()
     drop_idx = []
-    for idx, row in tqdm(new_df.iterrows()):
+    for idx, row in tqdm(new_df.iterrows()):  # there HAS to be a way to vectorize this...
         match_series = (old_df[stub_df.columns] == row).all(axis=1)
         if match_series.any():
             drop_idx.append(np.arange(len(match_series))[match_series])
@@ -159,13 +152,15 @@ def df_row_diff_2(old_df,stub_df):
 
 def clean_stub_df(df):
     df.columns = [k.lower().replace(' ','_') for k in df.keys()]
+    # in-column value replacement
     if 'uploaded_on' in df.keys():
         df['uploaded_dt'] = [safe_to_dt(dts) for dts in df['uploaded_on'].values]
+    # column splitting and replacement
     if 'location' in df.keys():
         loc_part_list = [loc.split(', ') for loc in df['location'].values]
         for idx, loc_part_tup in enumerate(loc_part_list):
             city_pred = len(loc_part_tup[1]) == 2
-            df.loc[idx,'city'] = loc_part_tup[0]
+            df.loc[idx,'city'] = loc_part_tup[0]    # city always first
             df.loc[idx,'state'] = loc_part_tup[1] if city_pred else ''
             if len(loc_part_tup) > 2:
                 df.loc[idx,'agency'] = loc_part_tup[2] if city_pred else loc_part_tup[1]
@@ -187,15 +182,15 @@ def parse_fpds_html(fpds_soup):
     return data_dict
 
 def log_row_error(mode,dt,req_url):
-    runlog_dir = os.path.join(SCRIPT_DIR, "runlog")
-    if not os.path.exists(runlog_dir):
-        os.makedirs(runlog_dir)
-    with open(os.path.join(runlog_dir, f"scrape-{dt}.txt"),'a') as lwf:
+    if not os.path.exists("./runlog"):
+        os.makedirs("./runlog")
+    with open(f"./runlog/scrape-{dt}.txt",'a') as lwf:
         print(f"{mode},{dt},{req_url}",file=lwf)
 
 def extend_contract_data(contract_df,dt):
     fpds_df = pd.DataFrame([])
     rh = req.utils.default_headers()
+    # this takes about 2s per iteration. Speedup without DOSing the FPDS server?
     for fpds_link in tqdm(contract_df.fpds_link.values):
         if validators.url(fpds_link):
             try:
@@ -230,12 +225,12 @@ def extend_grant_data(grant_df,dt):
     return pd.concat([grant_df.reset_index().drop('index',axis=1),usas_df],axis=1)
 
 def save_doge_data(contract_df, grant_df, property_df, stub_contract_df, stub_grant_df, stub_property_df):
-    contract_df.to_csv(os.path.join(DATA_DIR, 'doge-contract.csv'), index=False)
-    grant_df.to_csv(os.path.join(DATA_DIR, 'doge-grant.csv'), index=False)
-    property_df.to_csv(os.path.join(DATA_DIR, 'doge-property.csv'), index=False)
-    stub_contract_df.to_csv(os.path.join(DATA_DIR, 'doge-contract-stub.csv'), index=False)
-    stub_grant_df.to_csv(os.path.join(DATA_DIR, 'doge-grant-stub.csv'), index=False)
-    stub_property_df.to_csv(os.path.join(DATA_DIR, 'doge-property-stub.csv'), index=False)
+    contract_df.to_csv('./data/doge-contract.csv',index=False)
+    grant_df.to_csv('./data/doge-grant.csv',index=False)
+    property_df.to_csv('./data/doge-property.csv',index=False)
+    stub_contract_df.to_csv('./data/doge-contract-stub.csv',index=False)
+    stub_grant_df.to_csv('./data/doge-grant-stub.csv',index=False)
+    stub_property_df.to_csv('./data/doge-property-stub.csv',index=False)
 
 def update_doge_data():
     datetime_scrape = datetime.strftime(datetime.now(),'%Y-%m-%d-%H%M')
@@ -249,7 +244,7 @@ def update_doge_data():
         df_row_diff_2(pre_df,stub_df) for pre_df, stub_df in zip(
             [pre_contract_df,pre_grant_df,pre_property_df],[stub_contract_df, stub_grant_df, stub_property_df]
         )
-    ]
+    ] # dropped idx values are for debugging and tracking erroneously ejected "duplicate" entries.
     print('extending contract table with FPDS data...')
     new_contract_df = extend_contract_data(new_contract_df,datetime_scrape)
     new_contract_df['dt_scrape'] = datetime_scrape
