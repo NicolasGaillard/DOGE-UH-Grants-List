@@ -21,9 +21,13 @@ os.makedirs(DATA_DIR, exist_ok=True)
 N_REQ = 10
 LIMIT_S = 3
 
-# (unchanged) data_key_dict and all functions remain as-is...
+# ... your full data_key_dict here ...
 
-# Override file-saving functions to use absolute paths
+# (other unchanged functions: clean_pre_df, all your scraping, processing, diffing functions)
+
+def clean_pre_df(df):
+    df = df.fillna('')
+    return df
 
 def safe_load_csv(filename):
     filepath = os.path.join(DATA_DIR, filename)
@@ -49,7 +53,11 @@ def save_doge_data(contract_df, grant_df, property_df, stub_contract_df, stub_gr
     stub_grant_df.to_csv(os.path.join(DATA_DIR, 'doge-grant-stub.csv'), index=False)
     stub_property_df.to_csv(os.path.join(DATA_DIR, 'doge-property-stub.csv'), index=False)
 
-# (everything else in the script remains unchanged)
+# ... ALL your other functions from the original (scrape_doge, extend_grant_data, etc.) ...
+
+def update_doge_data():
+    # ... FULL CONTENTS from your original function ...
+    # use the same logic as before!
 
 def main():
     contract_df, grant_df, property_df, stub_contract_df, stub_grant_df, stub_property_df = update_doge_data()
