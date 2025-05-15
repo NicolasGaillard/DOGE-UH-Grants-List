@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, current_app
 import pandas as pd
 import os
 from datetime import datetime
@@ -10,7 +10,8 @@ def generate_static_html():
     try:
         df_all = pd.read_csv(csv_path)
     except Exception as e:
-        return f"<h2>Error loading CSV file: {e}</h2>"
+        print(f"Error loading CSV file: {e}")
+        return
 
     df_all['date'] = pd.to_datetime(df_all['date'], errors='coerce').dt.date
     second_row_date = df_all['date'].iloc[1] if len(df_all) > 1 else "N/A"
@@ -25,7 +26,7 @@ def generate_static_html():
         df_all['recipient'].str.contains('Hawaii', case=False, na=False) &
         df_all['recipient'].str.contains('University', case=False, na=False) &
         ~df_all['recipient'].str.contains('Pacific', case=False, na=False)
-    ].copy()   # <--- THIS .copy() IS IMPORTANT TO SILENCE THE WARNING!
+    ].copy()
 
     def clean_description(text, link, word_limit=50):
         if not isinstance(text, str):
@@ -39,7 +40,6 @@ def generate_static_html():
             truncated += f' <a href="{link}" target="_blank">[LINK]</a>'
         return truncated
 
-    # Use .loc[:, 'col'] and work on a copy of the DataFrame
     df.loc[:, 'description_doge'] = df.apply(
         lambda row: clean_description(row['description_doge'], row.get('link')), axis=1
     )
@@ -55,8 +55,9 @@ def generate_static_html():
     df.loc[:, 'date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
     last_scraped = datetime.now().strftime('%Y-%m-%d')
 
-    # Use Flask application context for render_template
+    print("About to enter Flask app context.")
     with app.app_context():
+        print("Inside Flask app context:", current_app.name)
         html = render_template(
             'index.html',
             grants=df.to_dict(orient='records'),
@@ -64,10 +65,10 @@ def generate_static_html():
             second_row_date=second_row_date,
             last_hawaii_univ_date=last_hawaii_univ_date
         )
-
-    os.makedirs('docs', exist_ok=True)
-    with open('docs/index.html', 'w', encoding='utf-8') as f:
-        f.write(html)
+        os.makedirs('docs', exist_ok=True)
+        with open('docs/index.html', 'w', encoding='utf-8') as f:
+            f.write(html)
+        print("HTML generated and written to docs/index.html")
 
 if __name__ == '__main__':
     generate_static_html()
