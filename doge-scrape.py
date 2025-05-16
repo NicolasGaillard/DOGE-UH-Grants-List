@@ -29,7 +29,14 @@ data_key_dict = {
 
 def safe_load_csv(filename):
     filepath = os.path.join(DATA_DIR, filename)
-    df = pd.read_csv(filepath) if os.path.exists(filepath) else pd.DataFrame([])
+    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+        try:
+            df = pd.read_csv(filepath)
+        except Exception as e:
+            print(f"Could not read {filepath}: {e}")
+            df = pd.DataFrame([])
+    else:
+        df = pd.DataFrame([])
     if 'uploaded_dt' in df.keys():
         df['uploaded_dt'] = pd.to_datetime(df['uploaded_dt'])
     return df
@@ -105,9 +112,19 @@ def safe_to_dt(dtstr):
     return dt
 
 def df_row_diff(old_df,new_df):
-    return pd.concat([old_df,new_df])[new_df.columns].drop_duplicates(keep=False)
+    # Only compute difference if columns match
+    if list(old_df.columns) != list(new_df.columns):
+        print("WARNING: old_df and new_df have different columns. Using new_df only.")
+        return new_df, []
+    return pd.concat([old_df,new_df])[new_df.columns].drop_duplicates(keep=False), []
 
 def df_row_diff_2(old_df,stub_df):
+    # If columns mismatch, skip and return stub_df (all as new)
+    if set(stub_df.columns) - set(old_df.columns):
+        print("WARNING: Column mismatch detected. All rows in stub_df will be considered new.")
+        print("old_df columns:", list(old_df.columns))
+        print("stub_df columns:", list(stub_df.columns))
+        return stub_df.copy(), []
     new_df = stub_df.copy()
     drop_idx = []
     for idx, row in tqdm(new_df.iterrows()):
