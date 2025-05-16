@@ -24,7 +24,7 @@ jobs:
       - name: Run doge-scrape.py
         run: python doge-scrape.py
 
-      - name: Generate static HTML with app.py
+      - name: Generate static HTML with UHgrants.py
         run: python UHgrants.py
 
       - name: Commit and push updated CSVs and static HTML
@@ -34,8 +34,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add docs/index.html
-          git add '*.csv'
-          git add **/*.csv
+          git add data/
           git commit -m "Update all generated CSVs and static HTML [skip ci]" || echo "No changes to commit"
           git pull --rebase
           git push
