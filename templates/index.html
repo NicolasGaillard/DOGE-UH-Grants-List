@@ -47,12 +47,13 @@
 <body>
     <h1>DOGE list of UH Grants</h1>
 
-    <!-- Scrape and update metadata -->
+    <!-- Reordered metadata summary -->
     <p>
         <strong>Most recent data pulling:</strong> {{ last_scraped }}<br>
         <strong>Last update on DOGE.gov:</strong> {{ second_row_date }}<br>
-        <strong>Last entry for UH grants:</strong> {{ last_hawaii_univ_date }}<br>
         <strong>Total grants in DOGE:</strong> {{ total_entries }}<br>
+        <br>
+        <strong>Last entry for UH grants:</strong> {{ last_hawaii_univ_date }}<br>
         <strong>Total UH grants:</strong> {{ filtered_entries }}
     </p>
 
