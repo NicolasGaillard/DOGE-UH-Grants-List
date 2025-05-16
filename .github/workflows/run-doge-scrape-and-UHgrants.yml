@@ -21,11 +21,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install --no-cache-dir --force-reinstall -r requirements.txt
 
-      - name: Run doge-scrape.py
-        run: python doge-scrape.py
+      - name: Show directory and data before scrape
+        run: |
+          echo "==> Directory contents before scrape:"
+          ls -al
+          echo "==> Data directory contents before scrape:"
+          ls -al data || echo "data/ directory missing"
+
+      - name: Run doge-scrape.py (with error output)
+        run: |
+          echo "==> Now running doge-scrape.py"
+          python doge-scrape.py
+
+      - name: Show directory and data after scrape
+        run: |
+          echo "==> Directory contents after scrape:"
+          ls -al
+          echo "==> Data directory contents after scrape:"
+          ls -al data || echo "data/ directory missing"
 
       - name: Generate static HTML with UHgrants.py
-        run: python UHgrants.py
+        run: |
+          echo "==> Now running UHgrants.py"
+          python UHgrants.py
 
       - name: Commit and push updated CSVs and static HTML
         env:
