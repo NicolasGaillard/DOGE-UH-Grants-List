@@ -1,0 +1,41 @@
+name: Run DOGE scrape and generate static HTML
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-site:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --force-reinstall -r requirements.txt
+
+      - name: Run doge-scrape.py
+        run: python doge-scrape.py
+
+      - name: Generate static HTML with app.py
+        run: python allgrants.py
+
+      - name: Commit and push updated CSVs and static HTML
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add docs/index.html
+          git add '*.csv'
+          git add **/*.csv
+          git commit -m "Update all generated CSVs and static HTML [skip ci]" || echo "No changes to commit"
+          git pull --rebase
+          git push
