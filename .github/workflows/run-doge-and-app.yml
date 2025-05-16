@@ -25,7 +25,7 @@ jobs:
         run: python doge-scrape.py
 
       - name: Generate static HTML with app.py
-        run: python app.py
+        run: python UHgrants.py
 
       - name: Commit and push updated CSVs and static HTML
         env:
