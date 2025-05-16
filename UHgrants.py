@@ -27,7 +27,7 @@ def generate_static_html():
         df_all['recipient'].str.contains('Hawaii', case=False, na=False) &
         df_all['recipient'].str.contains('University', case=False, na=False) &
         ~df_all['recipient'].str.contains('Pacific', case=False, na=False)
-    ].copy()  # .copy() prevents pandas warnings
+    ].copy()
 
     # Counts for display
     total_entries = len(df_all)
@@ -58,7 +58,9 @@ def generate_static_html():
     df.loc[:, 'value'] = df['value'].apply(format_dollar)
     df.loc[:, 'savings'] = df['savings'].apply(format_dollar)
     df.loc[:, 'date'] = pd.to_datetime(df['date'], errors='coerce').dt.date
-    last_scraped = datetime.now().strftime('%Y-%m-%d')
+
+    # Include both date and time
+    last_scraped = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     with app.app_context():
         html = render_template(
